@@ -1,0 +1,11 @@
+mysql-router: MySQL Router (a lightweight middleware for routing MySQL traffic)
+mysql-router:
+mysql-router: MySQL Router is lightweight middleware that provides transparent
+mysql-router: routing between your application and any backend MySQL Servers.
+mysql-router: It can be used for a wide variety of use cases, such as providing
+mysql-router: high availability and scalability by effectively routing database
+mysql-router: traffic to appropriate backend MySQL Servers.
+mysql-router:
+mysql-router:
+mysql-router:
+mysql-router: Packaged by Georgi D. Sotirov <gdsotirov@dir.bg>
