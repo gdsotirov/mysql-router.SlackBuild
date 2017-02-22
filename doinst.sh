@@ -17,6 +17,6 @@ config() {
   # Otherwise, we leave the .new copy for the admin to consider...
 }
 
-config etc/mysql-router/mysqlrouter.ini.new
+config etc/mysqlrouter/mysqlrouter.ini.new
 config etc/rc.d/rc.mysqlrouter.new
 
