@@ -19,7 +19,7 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.1 2017/02/21 09:57:25 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.2 2017/02/22 20:00:43 gsotirov Exp $
 #
 
 . ../../slack-package.conf
@@ -71,23 +71,23 @@ cmake -LAH \
       -DCMAKE_C_COMPILER=gcc \
       -DCMAKE_C_FLAGS="$SLKCFLAGS" \
       -DCMAKE_INSTALL_PREFIX=/usr \
-      -DCMAKE_INSTALL_SYSCONFDIR=/etc/${NAME} \
+      -DCMAKE_INSTALL_SYSCONFDIR=/etc/${NAMELONG} \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DGPL=ON \
       -DINSTALL_BINDIR=bin \
       -DMYSQL_ROUTER_INI=${NAMELONG}.ini \
-      -DINSTALL_CONFIGDIR=/etc/${NAME} \
+      -DINSTALL_CONFIGDIR=/etc/${NAMELONG} \
       -DINSTALL_DOCDIR=doc/${NAME}-${VERSION} \
       -DINSTALL_LAYOUT=STANDALONE \
       -DINSTALL_LIBDIR=lib${LIBDIRSUFFIX} \
-      -DINSTALL_LOGDIR=/var/log/${NAME} \
+      -DINSTALL_LOGDIR=/var/log/${NAMELONG} \
       -DINSTALL_MYSQLDATADIR=/var/lib/${NAME} \
       -DINSTALL_PLUGINDIR=lib${LIBDIRSUFFIX}/${NAMELONG} \
-      -DINSTALL_RUNTIMEDIR=/var/run/${NAME} \
+      -DINSTALL_RUNTIMEDIR=/var/run/${NAMELONG} \
       -DINSTALL_SBINDIR=sbin \
-      -DROUTER_LOGDIR=/var/log/${NAME} \
+      -DROUTER_LOGDIR=/var/log/${NAMELONG} \
       -DROUTER_PLUGINDIR=/usr/lib${LIBDIRSUFFIX}/${NAMELONG} \
-      -DROUTER_RUNTIMEDIR=/var/run/${NAME} \
+      -DROUTER_RUNTIMEDIR=/var/run/${NAMELONG} \
       .. || exit 5
 #     -DENABLE_TESTS=ON \ # fails
 
@@ -111,17 +111,21 @@ create_docs $PKG ${NAME}-${VERSION}
 # - remove static libs
 rm -f $PKG/usr/lib${LIBDIRSUFFIX}/libmysqlharness.a
 # - copy sample .ini file in /etc and change values
-install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.ini $PKG/etc/${NAME}/${NAMELONG}.ini.new
-( cd $PKG/etc/${NAME}
+install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.ini $PKG/etc/${NAMELONG}/${NAMELONG}.ini.new
+( cd $PKG/etc/${NAMELONG}
   sed -i "s/^#\[DEFAULT\]$/[DEFAULT]/"                                                   ${NAMELONG}.ini.new
-  sed -i "s/^#logging_folder.*$/logging_folder = \/var\/log\/${NAME}/g"                  ${NAMELONG}.ini.new
+  sed -i "s/^#logging_folder.*$/logging_folder = \/var\/log\/${NAMELONG}/g"              ${NAMELONG}.ini.new
   sed -i "s/^#plugin_folder.*$/plugin_folder = \/usr\/lib${LIBDIRSUFFIX}\/${NAMELONG}/g" ${NAMELONG}.ini.new
-  sed -i "s/^#config_folder.*$/config_folder = \/etc\/${NAME}/g"                         ${NAMELONG}.ini.new
-  sed -i "s/^#runtime_folder.*$/runtime_folder = \/var\/run\/${NAME}/g"                  ${NAMELONG}.ini.new
+  sed -i "s/^#config_folder.*$/config_folder = \/etc\/${NAMELONG}/g"                     ${NAMELONG}.ini.new
+  sed -i "s/^#runtime_folder.*$/runtime_folder = \/var\/run\/${NAMELONG}/g"              ${NAMELONG}.ini.new
 )
 # - copy sample init script in /etc/rc.d
 install -m 755 -d $PKG/etc/rc.d
 install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.init $PKG/etc/rc.d/rc.${NAMELONG}.new
+patch $PKG/etc/rc.d/rc.${NAMELONG}.new $CWD/rc.${NAMELONG}.diff
+# - change permissions on log and run directories
+chown mysql:mysql $PKG/var/log/${NAMELONG}
+chown mysql:mysql $PKG/var/run/${NAMELONG}
 
 # Install script and info
 mkdir -p $PKG/install
@@ -131,10 +135,11 @@ install -m 644 $CWD/slack-required  $PKG/install/slack-required
 
 SBDIR=$PKG/usr/src/slackbuilds/${NAME}-${VERSION}
 mkdir -p $SBDIR
-install -m 644 $CWD/doinst.sh          $SBDIR/doinst.sh
-install -m 644 $CWD/slack-desc         $SBDIR/slack-desc
-install -m 644 $CWD/slack-required     $SBDIR/slack-required
-install -m 644 $CWD/${NAME}.SlackBuild $SBDIR/${NAME}.SlackBuild
+install -m 644 $CWD/doinst.sh           $SBDIR/doinst.sh
+install -m 644 $CWD/slack-desc          $SBDIR/slack-desc
+install -m 644 $CWD/slack-required      $SBDIR/slack-required
+install -m 644 $CWD/rc.${NAMELONG}.diff $SBDIR/rc.${NAMELONG}.diff
+install -m 644 $CWD/${NAME}.SlackBuild  $SBDIR/${NAME}.SlackBuild
 
 # Build package:
 cd $PKG
