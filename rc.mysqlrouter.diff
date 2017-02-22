@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# $Id: rc.mysqlrouter.diff,v 1.1 2017/02/22 19:11:39 gsotirov Exp $
+# $Id: rc.mysqlrouter.diff,v 1.2 2017/02/22 19:58:53 gsotirov Exp $
 #
 33c33,162
 < . /lib/lsb/init-functions
@@ -24,7 +24,7 @@
 > function log_daemon_msg() { echo -n $1; }
 > function log_success_msg() { echo $1; }
 > function log_failure_msg() { echo $1; }
-> function log_end_msg() { if [ $1 -eq 0 ]; then echo " Done."; else " Filure."; fi }
+> function log_end_msg() { if [ $1 -eq 0 ]; then echo " Done."; else echo " Filure."; fi }
 > function log_warning_msg() { echo "Warning: $1"; }
 > function start_stop_daemon() {
 >   # see http://man7.org/linux/man-pages/man8/start-stop-daemon.8.html
@@ -91,8 +91,8 @@
 >       if [ $FG_QUIET != 1 ]; then
 >         echo -n " (kill $(cat $PID_FILE)) "
 >       fi
->       kill `cat $PID_FILE` >/dev/null 2>&1
->       killall $PROC_NAME >/dev/null 2>&1
+>       /bin/kill `cat $PID_FILE` >/dev/null 2>&1
+>       /bin/killall $PROC_NAME >/dev/null 2>&1
 >     fi
 >     rm -f $PID_FILE
 >   fi
@@ -123,7 +123,7 @@
 >   if [ -e $pidfile ]; then
 >     if [ -r $pidfile ]; then
 >       proc_pid=$(cat $pidfile)
->       /bin/kill -0 $proc_pid
+>       /bin/kill -0 $proc_pid >/dev/null 2>&1
 >       status=$?
 >     else
 >       status="4"
