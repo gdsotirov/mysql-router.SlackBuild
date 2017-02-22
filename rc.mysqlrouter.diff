@@ -1,0 +1,186 @@
+# Patch rc.mysqlrouter start/stop script to make it working by emulating LSB
+# Copyright (C) 2017 Georgi D. Sotirov <gdsotirov@dir.bg>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+#
+# $Id: rc.mysqlrouter.diff,v 1.1 2017/02/22 19:11:39 gsotirov Exp $
+#
+33c33,162
+< . /lib/lsb/init-functions
+---
+> # Emulate LSB (Linux Standard Base) commands and functions
+> function log_daemon_msg() { echo -n $1; }
+> function log_success_msg() { echo $1; }
+> function log_failure_msg() { echo $1; }
+> function log_end_msg() { if [ $1 -eq 0 ]; then echo " Done."; else " Filure."; fi }
+> function log_warning_msg() { echo "Warning: $1"; }
+> function start_stop_daemon() {
+>   # see http://man7.org/linux/man-pages/man8/start-stop-daemon.8.html
+>   while [[ $# -gt 1 ]]; do
+>     case "$1" in
+>       # commands
+>       -S|--start       ) START_STOP="start"    ;;
+>       -K|--stop        ) START_STOP="stop"     ;;
+>       # matching options
+>       -p|--pidfile     ) PID_FILE="$2" ; shift ;;
+>       -x|--exec        ) CMD_LINE="$2" ; shift ;;
+>       -n|--name        ) PROC_NAME="$2"; shift ;; # not implemented
+>       -u|--user        ) USER_NAME="$2"; shift ;; # not implemented
+>       # generic options
+>       -R=*|--retry=*   ) RTRY_CNT="${1#*=}";   ;;
+>       -t|--test        ) START_STOP="test"     ;;
+>       -q|--quiet       ) FG_QUIET=1            ;;
+>       -c|--chuid       ) USER_NAME=""; shift ;;
+>       -b|--background  ) SH_BKG='&'            ;;
+>       -m|--make-pidfile) FG_MAKE_PID=1         ;;
+>       --               ) shift; CMD_OPTS="$@"; break ;;
+>       # ignore and report all other options as errors
+>       *) echo "Error: Unregognized or unimplemented option: '$1'" ;;
+>    esac
+>    shift
+>   done
+> 
+>   FG_QUIET=${FG_QUIET:-0}
+>   SH_BKG=${SH_BKG:-&&} # to execute next command only on sucess
+>   FG_MAKE_PID=${FG_MAKE_PID:-0}
+> 
+>   if [ "$START_STOP" == "test" ]; then
+>     if [[ $FG_QUIET -ne 1 ]]; then
+>       echo "$CMD_LINE $CMD_OPTS"
+>     fi
+>     return 0
+>   elif [ "$START_STOP" == "start" ]; then
+>     if [[ $FG_QUIET -ne 1 ]]; then
+>       echo -n " ($CMD_LINE $CMD_OPTS) "
+>     fi
+>     if [ "$USER_NAME" != "" ]; then
+>       if [[ $FG_MAKE_PID -ne 0 ]]; then
+>         /bin/su -p -s /bin/sh $USER_NAME -c "$CMD_LINE $CMD_OPTS $SH_BKG echo \$! > $PID_FILE" >/dev/null 2>&1
+>       else
+>         /bin/su -p -s /bin/sh $USER_NAME -c "$CMD_LINE $CMD_OPTS $SH_BKG" >/dev/null 2>&1
+>       fi
+>     else
+>       if [[ $FG_MAKE_PID -ne 0 ]]; then
+>         if [ "$SH_BKG" != "" ]; then
+>           $CMD_LINE $CMD_OPTS >/dev/null 2>&1 & echo $! > $PID_FILE
+>         else
+>           $CMD_LINE $CMD_OPTS >/dev/null 2>&1 && echo $! > $PID_FILE
+>         fi
+>       else
+>         if [ "$SH_BKG" != "" ]; then
+>           $CMD_LINE $CMD_OPTS >/dev/null 2>&1 &
+>         else
+>           $CMD_LINE $CMD_OPTS >/dev/null 2>&1
+>         fi
+>       fi
+>     fi
+>   elif [ "$START_STOP" == "stop" ]; then
+>     if [ -e $PID_FILE ]; then
+>       if [ $FG_QUIET != 1 ]; then
+>         echo -n " (kill $(cat $PID_FILE)) "
+>       fi
+>       kill `cat $PID_FILE` >/dev/null 2>&1
+>       killall $PROC_NAME >/dev/null 2>&1
+>     fi
+>     rm -f $PID_FILE
+>   fi
+> 
+>   return 0
+> }
+> alias start-stop-daemon="start_stop_daemon"
+> function status_of_proc() {
+>   # see http://serverfault.com/questions/643006/what-is-status-of-proc-and-how-do-i-call-it
+>   local pidfile daemon name status OPTIND;
+>   pidfile=;
+>   OPTIND=1;
+> 
+>   while getopts p: opt; do
+>     case "$opt" in 
+>       p) pidfile="$OPTARG" ;;
+>     esac
+>   done
+> 
+>   shift $(($OPTIND - 1));
+> 
+>   daemon="$1";
+>   name="$2";
+>   status="0";
+> 
+>   # see http://www.linux-tutorial.info/modules.php?name=ManPage&sec=8&manpage=pidofproc
+>   #pidofproc $pidfile $daemon > /dev/null || status="$?";
+>   if [ -e $pidfile ]; then
+>     if [ -r $pidfile ]; then
+>       proc_pid=$(cat $pidfile)
+>       /bin/kill -0 $proc_pid
+>       status=$?
+>     else
+>       status="4"
+>     fi
+>   else
+>     procs=$(pidof $name)
+>     if [ "$procs" != "" ]; then
+>       status="0"
+>     else
+>       status="1"
+>     fi
+>   fi
+> 
+>   if [ "$status" = 0 ]; then
+>     log_success_msg "$name is running";
+>     return 0;
+>   else
+>     if [ "$status" = 4 ]; then
+>       log_failure_msg "could not access PID file for $name";
+>       return $status;
+>     else
+>       log_failure_msg "$name is not running";
+>       return $status;
+>     fi;
+>   fi
+> }
+49c178
+<   log_daemon_msg "Starting MySQL Router"
+---
+>   log_daemon_msg "Starting ${NAME}"
+56,57c185,186
+<   start="start-stop-daemon --start --pidfile $PID --exec $DAEMON"
+<   $start --test -u mysql 1>/dev/null || retval=1
+---
+>   start="--start --pidfile $PID --exec $DAEMON"
+>   start-stop-daemon $start --test -u mysql 1>/dev/null || retval=1
+62c191
+<           chown mysql:adm ${RUNTIMEDIR}
+---
+>           chown mysql:mysql ${RUNTIMEDIR}
+69c198
+<           chown mysql:adm ${LOGDIR}
+---
+>           chown mysql:mysql ${LOGDIR}
+75c204
+<   chown mysql:adm ${LOGFILE}
+---
+>   chown mysql:mysql ${LOGFILE}
+78c207
+<   /lib/init/apparmor-profile-load usr.sbin.mysqlrouter
+---
+>   #/lib/init/apparmor-profile-load usr.sbin.mysqlrouter
+80c209
+<   $start -m -b --chuid mysql -- $DAEMON_OPTIONS 2>/dev/null || retval=2
+---
+>   start-stop-daemon $start -m -b --chuid mysql -- $DAEMON_OPTIONS 2>/dev/null || retval=2
+138c267
+<     >2& echo "Usage: /etc/init.d/mysqlrouter {start|stop|status|restart|force-reload}"
+---
+>     >2& echo "Usage: $0 {start|stop|status|restart|force-reload}"
