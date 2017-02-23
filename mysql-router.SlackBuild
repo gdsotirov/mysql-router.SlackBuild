@@ -19,7 +19,7 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.2 2017/02/22 20:00:43 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.3 2017/02/23 20:30:01 gsotirov Exp $
 #
 
 . ../../slack-package.conf
@@ -67,7 +67,7 @@ mkdir -p build; cd build
 cmake -LAH \
       -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_CXX_COMPILER=g++ \
-      -DCMAKE_CXX_FLAGS="$SLKCFLAGS" \
+      -DCMAKE_CXX_FLAGS="$SLKCFLAGS -latomic" \
       -DCMAKE_C_COMPILER=gcc \
       -DCMAKE_C_FLAGS="$SLKCFLAGS" \
       -DCMAKE_INSTALL_PREFIX=/usr \
