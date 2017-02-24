@@ -15,9 +15,9 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# $Id: rc.mysqlrouter.diff,v 1.3 2017/02/23 16:41:57 gsotirov Exp $
+# $Id: rc.mysqlrouter.diff,v 1.4 2017/02/24 12:59:37 gsotirov Exp $
 #
-33c33,162
+33c33,169
 < . /lib/lsb/init-functions
 ---
 > # Emulate LSB (Linux Standard Base) commands and functions
@@ -41,44 +41,49 @@
 >       -u|--user        ) USER_NAME="$2"; shift ;; # not implemented
 >       # generic options
 >       -R=*|--retry=*   ) RTRY_CNT="${1#*=}";   ;; # not implemented
->       -t|--test        ) START_STOP="test"     ;;
+>       -t|--test        ) FG_TEST=1             ;;
 >       -q|--quiet       ) FG_QUIET=1            ;;
 >       -c|--chuid       ) USER_NAME="$2"; shift ;;
 >       -b|--background  ) SH_BKG=1              ;;
 >       -m|--make-pidfile) FG_MAKE_PID=1         ;;
 >       --               ) shift; CMD_OPTS="$@"; break ;;
 >       # ignore and report all other options as errors
->       *) echo "Error: Unregognized or unimplemented option: '$1'" ;;
+>       *) log_failure_msg "Error: Unregognized or unimplemented option: '$1'" ;;
 >    esac
 >    shift
 >   done
 > 
+>   FG_TEST=${FG_TEST:-0}
 >   FG_QUIET=${FG_QUIET:-0}
 >   SH_BKG=${SH_BKG:-1}           # always true
 >   FG_MAKE_PID=${FG_MAKE_PID:-1} # always true
 > 
->   if [ "$START_STOP" == "test" ]; then
->     if [ $FG_QUIET -ne 1 ]; then
->       echo "$CMD_LINE $CMD_OPTS"
+>   if [ "$START_STOP" == "start" ]; then
+>     status_of_proc -p $PID_FILE $CMD_LINE "$PROC_NAME"
+>     # return if process already running
+>     if [ $? -eq 0 ]; then
+>       return 1;
 >     fi
->     return 0
->   elif [ "$START_STOP" == "start" ]; then
 >     if [ $FG_QUIET -ne 1 ]; then
 >       echo -n " ($CMD_LINE $CMD_OPTS) "
 >     fi
->     if [ "$USER_NAME" != "" ]; then
->       /bin/su -p -s /bin/sh $USER_NAME -c "$CMD_LINE $CMD_OPTS & echo \$! > $PID_FILE" >/dev/null 2>&1
->       sleep 1
->       kill -0 `cat $PID_FILE` >/dev/null 2>&1
->       retval=$?
->     else
->       $CMD_LINE $CMD_OPTS >/dev/null 2>&1 &
->       sleep 1
->       kill -0 $! >/dev/null 2>&1
->       retval=$?
->       if [ $retval -eq 0 ]; then
->         echo $! > $PID_FILE
+>     if [ $FG_TEST -eq 0 ]; then
+>       if [ "$USER_NAME" != "" ]; then
+>         /bin/su -p -s /bin/sh $USER_NAME -c "$CMD_LINE $CMD_OPTS & echo \$! > $PID_FILE" >/dev/null 2>&1
+>         sleep 1
+>         kill -0 `cat $PID_FILE` >/dev/null 2>&1
+>         retval=$?
+>       else
+>         $CMD_LINE $CMD_OPTS >/dev/null 2>&1 &
+>         sleep 1
+>         kill -0 $! >/dev/null 2>&1
+>         retval=$?
+>         if [ $retval -eq 0 ]; then
+>           echo $! > $PID_FILE
+>         fi
 >       fi
+>     else
+>       retval=0
 >     fi
 >   elif [ "$START_STOP" == "stop" ]; then
 >     if [ -e $PID_FILE ]; then
@@ -92,6 +97,8 @@
 >       retval=$?
 >     fi
 >     rm -f $PID_FILE
+>   else
+>     log_failure_msg "Error: No command given!"
 >   fi
 > 
 >   if [ $retval -ne 0 ]; then
@@ -129,8 +136,8 @@
 >       status="4"
 >     fi
 >   else
->     procs=$(pidof $name)
->     if [ "$procs" != "" ]; then
+>     proc_pid=$(pidof `basename $daemon`)
+>     if [ "$proc_pid" != "" ]; then
 >       status="0"
 >     else
 >       status="1"
@@ -138,55 +145,59 @@
 >   fi
 > 
 >   if [ "$status" = 0 ]; then
->     log_success_msg "$name is running";
+>     log_success_msg "$name is running ($proc_pid).";
 >     return 0;
 >   else
 >     if [ "$status" = 4 ]; then
->       log_failure_msg "could not access PID file for $name";
+>       log_failure_msg "could not access PID file '$pidfile' for $name";
 >       return $status;
 >     else
->       log_failure_msg "$name is not running";
+>       log_failure_msg "$name is not running.";
 >       return $status;
 >     fi;
 >   fi
 > }
-49c178
+49c185
 <   log_daemon_msg "Starting MySQL Router"
 ---
 >   log_daemon_msg "Starting ${NAME}:"
-56c185
+56c192
 <   start="start-stop-daemon --start --pidfile $PID --exec $DAEMON"
 ---
 >   start="start_stop_daemon --start --pidfile $PID --exec $DAEMON"
-62c191
+62c198
 <           chown mysql:adm ${RUNTIMEDIR}
 ---
 >           chown mysql:mysql ${RUNTIMEDIR}
-69c198
+69c205
 <           chown mysql:adm ${LOGDIR}
 ---
 >           chown mysql:mysql ${LOGDIR}
-75c204
+75c211
 <   chown mysql:adm ${LOGFILE}
 ---
 >   chown mysql:mysql ${LOGFILE}
-78c207
+78c214
 <   /lib/init/apparmor-profile-load usr.sbin.mysqlrouter
 ---
 >   #/lib/init/apparmor-profile-load usr.sbin.mysqlrouter
-82c211
+79a216
+>   if [ $retval -eq 0 ]; then
+80a218
+>   fi
+82c220
 <   case $? in
 ---
 >   case $retval in
-97c226
+97c235
 <   log_daemon_msg "Stopping $NAME"
 ---
 >   log_daemon_msg "Stopping $NAME:"
-104c233
+104c242
 <   start-stop-daemon --stop --quiet --retry=$STOP_RETRY --pidfile $PID --name $PROCNAME
 ---
 >   start_stop_daemon --stop --quiet --retry=$STOP_RETRY --pidfile $PID --name $PROCNAME
-138c267
+138c276
 <     >2& echo "Usage: /etc/init.d/mysqlrouter {start|stop|status|restart|force-reload}"
 ---
 >     >2& echo "Usage: $0 {start|stop|status|restart|force-reload}"
