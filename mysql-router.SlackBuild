@@ -19,7 +19,7 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.4 2017/02/24 12:53:04 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.5 2017/02/24 14:41:16 gsotirov Exp $
 #
 
 . ../../slack-package.conf
@@ -73,6 +73,7 @@ cmake -LAH \
       -DCMAKE_INSTALL_PREFIX=/usr \
       -DCMAKE_INSTALL_SYSCONFDIR=/etc/${NAMELONG} \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DENABLE_TESTS=ON \
       -DGPL=ON \
       -DINSTALL_BINDIR=bin \
       -DMYSQL_ROUTER_INI=${NAMELONG}.ini \
@@ -89,7 +90,7 @@ cmake -LAH \
       -DROUTER_PLUGINDIR=/usr/lib${LIBDIRSUFFIX}/${NAMELONG} \
       -DROUTER_RUNTIMEDIR=/var/run/${NAMELONG} \
       .. || exit 5
-#     -DENABLE_TESTS=ON \ # fails
+      -DENABLE_TESTS=ON \ # fails
 
 # Build and install
 make -j4 VERBOSE=1 || exit 6
