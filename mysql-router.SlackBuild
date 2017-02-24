@@ -19,7 +19,7 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.3 2017/02/23 20:30:01 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.4 2017/02/24 12:53:04 gsotirov Exp $
 #
 
 . ../../slack-package.conf
@@ -110,7 +110,7 @@ create_docs $PKG ${NAME}-${VERSION}
   mv License.txt COPYING )
 # - remove static libs
 rm -f $PKG/usr/lib${LIBDIRSUFFIX}/libmysqlharness.a
-# - copy sample .ini file in /etc and change values
+# - copy sample .ini file in /etc, change folders and enable basic failover to localhost
 install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.ini $PKG/etc/${NAMELONG}/${NAMELONG}.ini.new
 ( cd $PKG/etc/${NAMELONG}
   sed -i "s/^#\[DEFAULT\]$/[DEFAULT]/"                                                   ${NAMELONG}.ini.new
@@ -118,6 +118,10 @@ install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.ini $PKG/etc/$
   sed -i "s/^#plugin_folder.*$/plugin_folder = \/usr\/lib${LIBDIRSUFFIX}\/${NAMELONG}/g" ${NAMELONG}.ini.new
   sed -i "s/^#config_folder.*$/config_folder = \/etc\/${NAMELONG}/g"                     ${NAMELONG}.ini.new
   sed -i "s/^#runtime_folder.*$/runtime_folder = \/var\/run\/${NAMELONG}/g"              ${NAMELONG}.ini.new
+  sed -i "s/^#\[routing:basic_failover\]$/[routing:basic_failover]/g"                    ${NAMELONG}.ini.new
+  sed -i "s/^#bind_port = 7001$/bind_address = 0.0.0.0:7001/g"                           ${NAMELONG}.ini.new
+  sed -i "s/^#mode = read-write$/mode = read-write/g"                                    ${NAMELONG}.ini.new
+  sed -i "s/^#destinations = mysql-server1:3306.*$/destinations = localhost:3306/g"      ${NAMELONG}.ini.new
 )
 # - copy sample init script in /etc/rc.d
 install -m 755 -d $PKG/etc/rc.d
