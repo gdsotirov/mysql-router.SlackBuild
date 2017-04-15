@@ -19,15 +19,15 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.5 2017/02/24 14:41:16 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.6 2017/04/15 17:44:37 gsotirov Exp $
 #
 
 . ../../slack-package.conf
 
 NAME=mysql-router
 NAMELONG=${NAME//-/}
-VERSION=2.0.4
-ARCH=${ARCH:-i486}
+VERSION=2.1.3
+ARCH=${ARCH:-i586}
 BUILD=${BUILD:-1}
 
 TMP=${TMP:-/tmp}
@@ -89,8 +89,9 @@ cmake -LAH \
       -DROUTER_LOGDIR=/var/log/${NAMELONG} \
       -DROUTER_PLUGINDIR=/usr/lib${LIBDIRSUFFIX}/${NAMELONG} \
       -DROUTER_RUNTIMEDIR=/var/run/${NAMELONG} \
+      -DWITH_SSL=yes \
+      -DWITH_STATIC=no \
       .. || exit 5
-      -DENABLE_TESTS=ON \ # fails
 
 # Build and install
 make -j4 VERBOSE=1 || exit 6
@@ -111,18 +112,18 @@ create_docs $PKG ${NAME}-${VERSION}
   mv License.txt COPYING )
 # - remove static libs
 rm -f $PKG/usr/lib${LIBDIRSUFFIX}/libmysqlharness.a
-# - copy sample .ini file in /etc, change folders and enable basic failover to localhost
-install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.ini $PKG/etc/${NAMELONG}/${NAMELONG}.ini.new
+# - copy sample .conf file in /etc, change folders and enable basic failover to localhost
+install -m 644 $PKG/usr/doc/${NAME}-${VERSION}/sample_${NAMELONG}.conf $PKG/etc/${NAMELONG}/${NAMELONG}.conf.new
 ( cd $PKG/etc/${NAMELONG}
-  sed -i "s/^#\[DEFAULT\]$/[DEFAULT]/"                                                   ${NAMELONG}.ini.new
-  sed -i "s/^#logging_folder.*$/logging_folder = \/var\/log\/${NAMELONG}/g"              ${NAMELONG}.ini.new
-  sed -i "s/^#plugin_folder.*$/plugin_folder = \/usr\/lib${LIBDIRSUFFIX}\/${NAMELONG}/g" ${NAMELONG}.ini.new
-  sed -i "s/^#config_folder.*$/config_folder = \/etc\/${NAMELONG}/g"                     ${NAMELONG}.ini.new
-  sed -i "s/^#runtime_folder.*$/runtime_folder = \/var\/run\/${NAMELONG}/g"              ${NAMELONG}.ini.new
-  sed -i "s/^#\[routing:basic_failover\]$/[routing:basic_failover]/g"                    ${NAMELONG}.ini.new
-  sed -i "s/^#bind_port = 7001$/bind_address = 0.0.0.0:7001/g"                           ${NAMELONG}.ini.new
-  sed -i "s/^#mode = read-write$/mode = read-write/g"                                    ${NAMELONG}.ini.new
-  sed -i "s/^#destinations = mysql-server1:3306.*$/destinations = localhost:3306/g"      ${NAMELONG}.ini.new
+  sed -i "s/^#\[DEFAULT\]$/[DEFAULT]/"                                                   ${NAMELONG}.conf.new
+  sed -i "s/^#logging_folder.*$/logging_folder = \/var\/log\/${NAMELONG}/g"              ${NAMELONG}.conf.new
+  sed -i "s/^#plugin_folder.*$/plugin_folder = \/usr\/lib${LIBDIRSUFFIX}\/${NAMELONG}/g" ${NAMELONG}.conf.new
+  sed -i "s/^#config_folder.*$/config_folder = \/etc\/${NAMELONG}/g"                     ${NAMELONG}.conf.new
+  sed -i "s/^#runtime_folder.*$/runtime_folder = \/var\/run\/${NAMELONG}/g"              ${NAMELONG}.conf.new
+  sed -i "s/^#\[routing:basic_failover\]$/[routing:basic_failover]/g"                    ${NAMELONG}.conf.new
+  sed -i "s/^#bind_port = 7001$/bind_address = 0.0.0.0:7001/g"                           ${NAMELONG}.conf.new
+  sed -i "s/^#mode = read-write$/mode = read-write/g"                                    ${NAMELONG}.conf.new
+  sed -i "s/^#destinations = mysql-server1:3306.*$/destinations = localhost:3306/g"      ${NAMELONG}.conf.new
 )
 # - copy sample init script in /etc/rc.d
 install -m 755 -d $PKG/etc/rc.d
