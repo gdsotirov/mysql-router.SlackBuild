@@ -19,14 +19,14 @@
 #
 # Visit SlackPack at http://sotirov-bg.net/slackpack/
 #
-# $Id: mysql-router.SlackBuild,v 1.7 2018/01/22 11:32:13 gsotirov Exp $
+# $Id: mysql-router.SlackBuild,v 1.8 2018/03/06 08:40:34 gsotirov Exp $
 #
 
 . ../../slack-package.conf
 
 NAME=mysql-router
 NAMELONG=${NAME//-/}
-VERSION=2.1.4
+VERSION=2.1.6
 ARCH=${ARCH:-i586}
 BUILD=${BUILD:-1}
 
