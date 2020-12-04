@@ -1,5 +1,5 @@
 # Patch rc.mysqlrouter start/stop script to make it working by emulating LSB
-# Copyright (C) 2017 Georgi D. Sotirov <gdsotirov@dir.bg>
+# Copyright (C) 2017 Georgi D. Sotirov <gdsotirov@gmail.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -15,7 +15,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #
-# $Id: rc.mysqlrouter.diff,v 1.6 2017/04/15 17:38:49 gsotirov Exp $
+# Visit SlackPack at https://sotirov-bg.net/slackpack/
 #
 33c33,175
 < . /lib/lsb/init-functions
