@@ -31,7 +31,7 @@
 >   local START_STOP="" PID_FILE="" CMD_LINE="" PROC_NAME="" USER_NAME=""
 >   local RTRY_CNT=1 FG_TEST=0 FG_OKNODO=0 FG_QUIET=0 SH_BKG=1 FG_MAKE_PID=1
 >   local CMD_OPTS=""
->   # see http://man7.org/linux/man-pages/man8/start-stop-daemon.8.html
+>   # see https://man7.org/linux/man-pages/man8/start-stop-daemon.8.html
 >   while [[ $# -gt 1 ]]; do
 >     case "$1" in
 >       # commands
@@ -114,7 +114,7 @@
 >   return $retval
 > }
 > function status_of_proc() {
->   # see http://serverfault.com/questions/643006/what-is-status-of-proc-and-how-do-i-call-it
+>   # see https://serverfault.com/questions/643006/what-is-status-of-proc-and-how-do-i-call-it
 >   local pidfile daemon name status OPTIND;
 >   pidfile=;
 >   OPTIND=1;
@@ -131,7 +131,7 @@
 >   name="$2";
 >   status="0";
 > 
->   # see http://www.linux-tutorial.info/modules.php?name=ManPage&sec=8&manpage=pidofproc
+>   # see https://www.unix.com/man-page/suse/8/pidofproc/
 >   #pidofproc $pidfile $daemon > /dev/null || status="$?";
 >   if [ -e $pidfile ]; then
 >     if [ -r $pidfile ]; then
